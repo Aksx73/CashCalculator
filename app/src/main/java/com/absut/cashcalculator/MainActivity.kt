@@ -16,17 +16,38 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,62 +59,111 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CashCalculatorTheme {
-
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CashCalculatorApp(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                CashCalculatorApp()
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CashCalculatorApp(modifier: Modifier = Modifier) {
+fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = viewModel()) {
 
-    val viewModel: MainViewModel = viewModel()
+    var showMenu by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
+    Scaffold(modifier = modifier.fillMaxSize(),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Cash Calculator",
+                        //style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = {/*todo*/ }) {
+                        Icon(Icons.Outlined.Refresh, contentDescription = "Reset")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /*todo*/ }) {
+                        Icon(Icons.Outlined.Share, contentDescription = "Share")
+                    }
+                    IconButton(onClick = { showMenu = !showMenu }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            onClick = {
+                                // Handle item click
+                                showMenu = false
+                            },
+                            text = { Text(text = "Save to history") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = "View history"
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                // Handle item click
+                                showMenu = false
+                            },
+                            text = { Text(text = "View history") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = "View history"
+                                )
+                            }
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(innerPadding),
+            color = MaterialTheme.colorScheme.background
         ) {
-            Text(
-                text = "Cash Calculator",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            LazyColumn {
-                items(
-                    viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-                ) { (index, pair) ->
-                    val (denomination, count) = pair
-                    DenominationRow(
-                        denomination = denomination,
-                        count = count,
-                        onCountChange = { newCount ->
-                            viewModel.updateCount(index, newCount)
-                        }
-                    )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                LazyColumn {
+                    items(
+                        viewModel.denominations.zip(viewModel.counts).withIndex().toList()
+                    ) { (index, pair) ->
+                        val (denomination, count) = pair
+                        DenominationRow(
+                            denomination = denomination,
+                            count = count,
+                            onCountChange = { newCount ->
+                                viewModel.updateCount(index, newCount)
+                            }
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Total: ₹${viewModel.total}",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = "Notes: ${viewModel.totalNotes}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Total: ₹${viewModel.total}",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text = "Notes: ${viewModel.totalNotes}",
-                style = MaterialTheme.typography.bodyLarge
-            )
         }
     }
 }
