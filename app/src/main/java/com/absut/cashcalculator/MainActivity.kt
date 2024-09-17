@@ -169,7 +169,11 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
 }
 
 @Composable
-fun DenominationRow(denomination: Int, count: Int, onCountChange: (Int) -> Unit) {
+fun DenominationRow(denomination: Int, count: String, onCountChange: (String) -> Unit) {
+    var text by remember { mutableStateOf(count) }
+    var isFocused by remember { mutableStateOf(false) }
+
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -179,22 +183,50 @@ fun DenominationRow(denomination: Int, count: Int, onCountChange: (Int) -> Unit)
         Image(
             painter = painterResource(id = getDenominationImageResource(denomination)),
             contentDescription = "₹$denomination note",
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier
+                .width(52.dp)
+                .height(21.dp)
         )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(text = "₹$denomination", textAlign = TextAlign.Start, modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "₹$denomination")
-        Spacer(modifier = Modifier.weight(1f))
-        TextField(
-            value = count.toString(),
+        Text(text = "x")
+        Spacer(modifier = Modifier.width(24.dp))
+        OutlinedTextField(
+            value = count,
             onValueChange = { newValue ->
-                val newCount = newValue.toIntOrNull() ?: 0
-                onCountChange(newCount)
+                /*val newCount = newValue.toIntOrNull() ?: 0
+                onCountChange(newCount)*/
+                //text = newValue
+                if (newValue.isEmpty() || newValue.toIntOrNull() != null) {
+                    onCountChange(newValue)
+                }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.width(80.dp)
+            modifier = Modifier
+                .width(80.dp)
+                .onFocusChanged { isFocused = it.isFocused },
+            shape = RoundedCornerShape(16.dp),
+            placeholder = {
+                if (!isFocused) {
+                    Text(
+                        "0",
+                        Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            textStyle = TextStyle(textAlign = TextAlign.Center),
+            singleLine = true,
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "= ₹${denomination * count}")
+        Spacer(modifier = Modifier.width(24.dp))
+        Text(text = "=")
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = "₹${denomination * (count.toIntOrNull() ?: 0)}",
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End
+        )
     }
 }
 
