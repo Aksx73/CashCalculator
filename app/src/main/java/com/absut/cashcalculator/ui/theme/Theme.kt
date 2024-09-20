@@ -95,14 +95,14 @@ fun CashCalculatorTheme(
             color = Color.Transparent
         )
         systemUiController.setNavigationBarColor(
-            color = Color.Transparent
+            color = DarkColorScheme.surfaceContainer
         )
     } else {
         systemUiController.setSystemBarsColor(
             color = Color.Transparent,darkIcons = true
         )
         systemUiController.setNavigationBarColor(
-            color = Color.Transparent
+            color = MaterialTheme.colorScheme.surfaceContainer
         )
     }
 
