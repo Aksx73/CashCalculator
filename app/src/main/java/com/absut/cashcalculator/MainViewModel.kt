@@ -2,6 +2,7 @@ package com.absut.cashcalculator
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -9,7 +10,7 @@ import androidx.lifecycle.ViewModel
 class MainViewModel : ViewModel() {
     val denominations = listOf(2000, 500, 200, 100, 50, 20, 10)
     var counts = mutableStateListOf<String>()
-    var total by mutableIntStateOf(0)
+    var total by mutableLongStateOf(0)
     var totalNotes by mutableIntStateOf(0)
 
     init {
@@ -23,7 +24,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun calculateTotal() {
-        total = denominations.zip(counts).sumOf { (denom, count) -> denom * (count.toIntOrNull() ?: 0) }
+        total = denominations.zip(counts).sumOf { (denom, count) -> denom * (count.toLongOrNull() ?: 0) }
         totalNotes = counts.sumOf { it.toIntOrNull() ?: 0 }
     }
 
