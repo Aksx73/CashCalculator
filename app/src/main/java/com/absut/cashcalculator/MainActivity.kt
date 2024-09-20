@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,13 +30,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,14 +45,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
+import com.absut.cashcalculator.util.toIndianCurrencyString
+import java.text.NumberFormat
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,13 +144,14 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Surface (
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = Shapes().medium,
+                    shape = Shapes().large,
                     color = MaterialTheme.colorScheme.surface
-                ){
+                ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row {
                             Text(
@@ -163,11 +165,13 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "₹${viewModel.total}",
+                            text = viewModel.total.toIndianCurrencyString(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
@@ -176,12 +180,12 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    shape = Shapes().medium,
+                    shape = Shapes().large,
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    LazyColumn (
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal =16.dp)
-                    ){
+                    LazyColumn(
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+                    ) {
                         items(
                             viewModel.denominations.zip(viewModel.counts).withIndex().toList()
                         ) { (index, pair) ->
@@ -196,9 +200,6 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                         }
                     }
                 }
-
-                //Spacer(modifier = Modifier.height(16.dp))
-
             }
         }
     }
@@ -228,7 +229,7 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = "x")
         Spacer(modifier = Modifier.width(24.dp))
-        OutlinedTextField(
+        OutlinedTextFieldWithCustomContentPadding(
             value = count,
             onValueChange = { newValue ->
                 /*val newCount = newValue.toIntOrNull() ?: 0
@@ -257,12 +258,13 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
             },
             textStyle = TextStyle(textAlign = TextAlign.Center),
             singleLine = true,
+            contentPadding = PaddingValues(10.dp)
         )
         Spacer(modifier = Modifier.width(24.dp))
         Text(text = "=")
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = "₹${denomination * (count.toIntOrNull() ?: 0)}",
+            text = "₹${denomination * (count.toLongOrNull() ?: 0)}",
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End
         )
@@ -272,14 +274,14 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
 fun getDenominationImageResource(denomination: Int): Int {
     // Replace with actual resource IDs for your denomination images
     return when (denomination) {
-        2000 -> R.drawable.ic_android_black_24dp
-        500 -> R.drawable.ic_android_black_24dp
-        200 -> R.drawable.ic_android_black_24dp
-        100 -> R.drawable.ic_android_black_24dp
-        50 -> R.drawable.ic_android_black_24dp
-        20 -> R.drawable.ic_android_black_24dp
-        10 -> R.drawable.ic_android_black_24dp
-        else -> R.drawable.ic_android_black_24dp
+        2000 -> R.drawable.two_thousand_note
+        500 -> R.drawable.five_hundred_note
+        200 -> R.drawable.two_hundred_note
+        100 -> R.drawable.hundred_note
+        50 -> R.drawable.fifty_note
+        20 -> R.drawable.twenty_note
+        10 -> R.drawable.ten_note
+        else -> R.drawable.ten_note
     }
 }
 
