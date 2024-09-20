@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,10 +33,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +51,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 
@@ -80,6 +85,7 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                         //style = MaterialTheme.typography.headlineMedium
                     )
                 },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 navigationIcon = {
                     IconButton(onClick = {/*todo*/ }) {
                         Icon(Icons.Outlined.Refresh, contentDescription = "Reset")
@@ -131,38 +137,68 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.surfaceContainer
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
             ) {
-                LazyColumn {
-                    items(
-                        viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-                    ) { (index, pair) ->
-                        val (denomination, count) = pair
-                        DenominationRow(
-                            denomination = denomination,
-                            count = count,
-                            onCountChange = { newCount ->
-                                viewModel.updateCount(index, newCount)
-                            }
+                Surface (
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = Shapes().medium,
+                    color = MaterialTheme.colorScheme.surface
+                ){
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row {
+                            Text(
+                                text = "Total",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Notes: ${viewModel.totalNotes}",
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.End,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Text(
+                            text = "₹${viewModel.total}",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.headlineSmall
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = Shapes().medium,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    LazyColumn (
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal =16.dp)
+                    ){
+                        items(
+                            viewModel.denominations.zip(viewModel.counts).withIndex().toList()
+                        ) { (index, pair) ->
+                            val (denomination, count) = pair
+                            DenominationRow(
+                                denomination = denomination,
+                                count = count,
+                                onCountChange = { newCount ->
+                                    viewModel.updateCount(index, newCount)
+                                }
+                            )
+                        }
+                    }
+                }
 
-                Text(
-                    text = "Total: ₹${viewModel.total}",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = "Notes: ${viewModel.totalNotes}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                //Spacer(modifier = Modifier.height(16.dp))
+
             }
         }
     }
@@ -204,7 +240,9 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier
-                .width(80.dp)
+                .weight(1f)
+                //.width(80.dp)
+                //.height(54.dp)
                 .onFocusChanged { isFocused = it.isFocused },
             shape = RoundedCornerShape(16.dp),
             placeholder = {
@@ -212,7 +250,8 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
                     Text(
                         "0",
                         Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        //overflow = TextOverflow.Visible
                     )
                 }
             },
