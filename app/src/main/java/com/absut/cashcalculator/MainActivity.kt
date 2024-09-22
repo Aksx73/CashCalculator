@@ -1,5 +1,7 @@
 package com.absut.cashcalculator
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Refresh
@@ -52,8 +55,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
+import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.toIndianCurrencyString
 import java.text.NumberFormat
@@ -76,6 +81,7 @@ class MainActivity : ComponentActivity() {
 fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = viewModel()) {
 
     var showMenu by remember { mutableStateOf(false) }
+    var openAlertDialog by remember { mutableStateOf(false) }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         topBar = {
@@ -88,7 +94,9 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 navigationIcon = {
-                    IconButton(onClick = {/*todo*/ }) {
+                    IconButton(onClick = {
+                        openAlertDialog = true
+                    }) {
                         Icon(Icons.Outlined.Refresh, contentDescription = "Reset")
                     }
                 },
@@ -140,6 +148,19 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.surfaceContainer
         ) {
+            if (openAlertDialog) {
+                ResetAlertDialog(
+                    onDismissRequest = { openAlertDialog = false },
+                    onConfirmation = {
+                        openAlertDialog = false
+                        viewModel.resetCalculator()
+                    },
+                    dialogTitle = "Reset cash counts?",
+                    dialogText = "This action will remove all count records and cannot be undone",
+                    icon = Icons.Default.Info
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -207,7 +228,7 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
 
 @Composable
 fun DenominationRow(denomination: Int, count: String, onCountChange: (String) -> Unit) {
-    var text by remember { mutableStateOf(count) }
+    //var text by remember { mutableStateOf(count) }
     var isFocused by remember { mutableStateOf(false) }
 
 
