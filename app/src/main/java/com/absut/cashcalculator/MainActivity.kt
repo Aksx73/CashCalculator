@@ -70,7 +70,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CashCalculatorTheme {
-                CashCalculatorApp()
+                val viewModel: MainViewModel = viewModel()
+
+                CashCalculatorApp(
+                    viewModel = viewModel,
+                    onShareClick = {
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, getShareResult(viewModel))
+                            type = "text/plain"
+                        }
+                        val shareIntent =
+                            Intent.createChooser(sendIntent, "Share cash calculation result via")
+                        startActivity(shareIntent)
+                    }
+                )
+
             }
         }
     }
@@ -78,7 +93,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = viewModel()) {
+fun CashCalculatorApp(
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel,
+    onShareClick: () -> Unit
+) {
 
     var showMenu by remember { mutableStateOf(false) }
     var openAlertDialog by remember { mutableStateOf(false) }
@@ -101,7 +120,9 @@ fun CashCalculatorApp(modifier: Modifier = Modifier, viewModel: MainViewModel = 
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /*todo*/ }) {
+                    IconButton(onClick = {
+                        onShareClick()
+                    }) {
                         Icon(Icons.Outlined.Share, contentDescription = "Share")
                     }
                     IconButton(onClick = { showMenu = !showMenu }) {
@@ -306,11 +327,35 @@ fun getDenominationImageResource(denomination: Int): Int {
     }
 }
 
+fun getShareResult(viewModel: MainViewModel): String {
+    val result = StringBuilder()
+    val valuePair = viewModel.denominations.associateWith {
+        viewModel.counts[viewModel.denominations.indexOf(it)]
+    }
+
+    result.appendLine("Cash Calculator Result")
+    result.appendLine()
+    for ((denomination, count) in valuePair) {
+        if (count.isNotEmpty()) {
+            val value = denomination * (count.toIntOrNull() ?: 0)
+            result.appendLine("$denomination x $count = $value")
+        }
+    }
+
+    result.appendLine("------------------")
+    result.appendLine("Total: ${viewModel.total.toIndianCurrencyString()}")
+
+    return result.toString()
+}
+
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     CashCalculatorTheme {
-        CashCalculatorApp()
+        CashCalculatorApp(
+            viewModel = viewModel<MainViewModel>(),
+            onShareClick = {}
+        )
     }
 }
