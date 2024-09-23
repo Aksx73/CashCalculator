@@ -1,24 +1,27 @@
 package com.absut.cashcalculator
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -35,7 +38,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -48,21 +50,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.toIndianCurrencyString
-import java.text.NumberFormat
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -163,84 +160,88 @@ fun CashCalculatorApp(
             )
         }
     ) { innerPadding ->
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
-            if (openAlertDialog) {
-                ResetAlertDialog(
-                    onDismissRequest = { openAlertDialog = false },
-                    onConfirmation = {
-                        openAlertDialog = false
-                        viewModel.resetCalculator()
-                    },
-                    dialogTitle = "Reset cash counts?",
-                    dialogText = "This action will remove all count records and cannot be undone",
-                    icon = Icons.Default.Info
-                )
-            }
+        if (openAlertDialog) {
+            ResetAlertDialog(
+                onDismissRequest = { openAlertDialog = false },
+                onConfirmation = {
+                    openAlertDialog = false
+                    viewModel.resetCalculator()
+                },
+                dialogTitle = "Reset cash counts?",
+                dialogText = "This action will remove all count records and cannot be undone",
+                icon = Icons.Default.Info
+            )
+        }
 
+        //todo add when block for different ui on landscape mode
+
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.surfaceContainer)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-            ) {
+                    .padding(horizontal = 16.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = Shapes().large
+                    ),
+
+                ) {
+                Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
+                    Text(
+                        text = "Total",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "Notes: ${viewModel.totalNotes}",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    modifier = modifier
+                Text(
+                    text = viewModel.total.toIndianCurrencyString(),
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = Shapes().large,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row {
-                            Text(
-                                text = "Total",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text(
-                                text = "Notes: ${viewModel.totalNotes}",
-                                modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.End,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = viewModel.total.toIndianCurrencyString(),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-                Surface(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = Shapes().large,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
-                    ) {
-                        items(
-                            viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-                        ) { (index, pair) ->
-                            val (denomination, count) = pair
-                            DenominationRow(
-                                denomination = denomination,
-                                count = count,
-                                onCountChange = { newCount ->
-                                    viewModel.updateCount(index, newCount)
-                                }
-                            )
+            Spacer(modifier = Modifier.size(24.dp))
+
+            LazyColumn(
+                modifier = Modifier
+                    //.weight(1f)
+                    .imePadding()
+                    .padding(horizontal = 16.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = Shapes().large
+                    ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+
+            ) {
+
+                items(
+                    viewModel.denominations.zip(viewModel.counts).withIndex().toList()
+                ) { (index, pair) ->
+                    val (denomination, count) = pair
+                    DenominationRow(
+                        denomination = denomination,
+                        count = count,
+                        onCountChange = { newCount ->
+                            viewModel.updateCount(index, newCount)
                         }
-                    }
+                    )
                 }
             }
         }
@@ -267,16 +268,13 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
                 .height(21.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text = "₹$denomination", textAlign = TextAlign.Start, modifier = Modifier.weight(1f))
+        Text(text = "$denomination", textAlign = TextAlign.Start, modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = "x")
         Spacer(modifier = Modifier.width(24.dp))
         OutlinedTextFieldWithCustomContentPadding(
             value = count,
             onValueChange = { newValue ->
-                /*val newCount = newValue.toIntOrNull() ?: 0
-                onCountChange(newCount)*/
-                //text = newValue
                 if (newValue.isEmpty() || newValue.toIntOrNull() != null) {
                     onCountChange(newValue)
                 }
@@ -284,10 +282,10 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier
                 .weight(1f)
-                //.width(80.dp)
+                //.defaultMinSize(minWidth = 80.dp)
                 //.height(54.dp)
                 .onFocusChanged { isFocused = it.isFocused },
-            shape = RoundedCornerShape(16.dp),
+            shape = Shapes().medium,
             placeholder = {
                 if (!isFocused) {
                     Text(
@@ -306,7 +304,7 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
         Text(text = "=")
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = "₹${denomination * (count.toLongOrNull() ?: 0)}",
+            text = "${denomination * (count.toLongOrNull() ?: 0)}",
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End
         )
@@ -329,15 +327,15 @@ fun getDenominationImageResource(denomination: Int): Int {
 
 fun getShareResult(viewModel: MainViewModel): String {
     val result = StringBuilder()
-    val valuePair = viewModel.denominations.associateWith {
+    val valueMap = viewModel.denominations.associateWith {
         viewModel.counts[viewModel.denominations.indexOf(it)]
     }
 
     result.appendLine("Cash Calculator Result")
     result.appendLine()
-    for ((denomination, count) in valuePair) {
+    for ((denomination, count) in valueMap) {
         if (count.isNotEmpty()) {
-            val value = denomination * (count.toIntOrNull() ?: 0)
+            val value: Long = denomination * (count.toLongOrNull() ?: 0)
             result.appendLine("$denomination x $count = $value")
         }
     }
