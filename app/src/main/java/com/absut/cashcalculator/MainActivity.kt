@@ -100,6 +100,8 @@ fun CashCalculatorApp(
 
     var showMenu by remember { mutableStateOf(false) }
     var openAlertDialog by remember { mutableStateOf(false) }
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Scaffold(modifier = modifier.fillMaxSize(),
         topBar = {
@@ -177,76 +179,157 @@ fun CashCalculatorApp(
 
         //todo add when block for different ui on landscape mode
 
+        if (isLandscape) {
+            LandscapeLayout(Modifier.padding(innerPadding), viewModel)
+        } else {
+            DefaultLayout(Modifier.padding(innerPadding), viewModel)
+        }
+
+    }
+}
+
+@Composable
+fun DefaultLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+    Column(
+        modifier = modifier
+            //.padding(innerPadding)
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
         Column(
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.surfaceContainer)
+                .padding(horizontal = 16.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = Shapes().large
+                ),
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = Shapes().large
-                    ),
-
-                ) {
-                Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                    Text(
-                        text = "Total",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = "Notes: ${viewModel.totalNotes}",
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+            Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
                 Text(
-                    text = viewModel.total.toIndianCurrencyString(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    text = "Total",
+                    style = MaterialTheme.typography.bodySmall
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Notes: ${viewModel.totalNotes}",
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
-
-            Spacer(modifier = Modifier.size(24.dp))
-
-            LazyColumn(
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = viewModel.total.toIndianCurrencyString(),
                 modifier = Modifier
-                    //.weight(1f)
-                    .imePadding()
-                    .padding(horizontal = 16.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = Shapes().large
-                    ),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            ) {
+        Spacer(modifier = Modifier.size(24.dp))
 
-                items(
-                    viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-                ) { (index, pair) ->
-                    val (denomination, count) = pair
-                    DenominationRow(
-                        denomination = denomination,
-                        count = count,
-                        onCountChange = { newCount ->
-                            viewModel.updateCount(index, newCount)
-                        }
-                    )
-                }
+        LazyColumn(
+            modifier = Modifier
+                //.weight(1f)
+                .imePadding()
+                .padding(horizontal = 16.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = Shapes().large
+                ),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+
+            items(
+                viewModel.denominations.zip(viewModel.counts).withIndex().toList()
+            ) { (index, pair) ->
+                val (denomination, count) = pair
+                DenominationRow(
+                    denomination = denomination,
+                    count = count,
+                    onCountChange = { newCount ->
+                        viewModel.updateCount(index, newCount)
+                    }
+                )
             }
         }
+    }
+}
+
+@Composable
+fun LandscapeLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(0.5f)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = Shapes().large
+                )
+                //.align(Alignment.CenterVertically),
+        ) {
+            Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
+                Text(
+                    text = "Total",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "Notes: ${viewModel.totalNotes}",
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = viewModel.total.toIndianCurrencyString(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                //.imePadding()
+                .padding(vertical = 16.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = Shapes().large
+                ),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+
+            items(
+                viewModel.denominations.zip(viewModel.counts).withIndex().toList()
+            ) { (index, pair) ->
+                val (denomination, count) = pair
+                DenominationRow(
+                    denomination = denomination,
+                    count = count,
+                    onCountChange = { newCount ->
+                        viewModel.updateCount(index, newCount)
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.size(16.dp))
     }
 }
 
@@ -359,3 +442,12 @@ fun GreetingPreview() {
         )
     }
 }
+
+@Preview(device = "spec:parent=pixel_5,orientation=landscape")
+@Composable
+private fun LandscapePreview() {
+    CashCalculatorTheme {
+        LandscapeLayout(viewModel = viewModel<MainViewModel>())
+    }
+}
+
