@@ -1,5 +1,6 @@
 package com.absut.cashcalculator
 
+import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -12,12 +13,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +64,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
+import com.absut.cashcalculator.util.Utils
 import com.absut.cashcalculator.util.toIndianCurrencyString
 
 class MainActivity : ComponentActivity() {
@@ -73,16 +78,7 @@ class MainActivity : ComponentActivity() {
 
                 CashCalculatorApp(
                     viewModel = viewModel,
-                    onShareClick = {
-                        val sendIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, getShareResult(viewModel))
-                            type = "text/plain"
-                        }
-                        val shareIntent =
-                            Intent.createChooser(sendIntent, "Share cash calculation result via")
-                        startActivity(shareIntent)
-                    }
+                    onShareClick = { shareIntent(this, viewModel) }
                 )
 
             }
@@ -97,7 +93,6 @@ fun CashCalculatorApp(
     viewModel: MainViewModel,
     onShareClick: () -> Unit
 ) {
-
     var showMenu by remember { mutableStateOf(false) }
     var openAlertDialog by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
@@ -109,21 +104,16 @@ fun CashCalculatorApp(
                 title = {
                     Text(
                         text = "Cash Calculator",
-                        //style = MaterialTheme.typography.headlineMedium
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 navigationIcon = {
-                    IconButton(onClick = {
-                        openAlertDialog = true
-                    }) {
+                    IconButton(onClick = { openAlertDialog = true }) {
                         Icon(Icons.Outlined.Refresh, contentDescription = "Reset")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        onShareClick()
-                    }) {
+                    IconButton(onClick = { onShareClick() }) {
                         Icon(Icons.Outlined.Share, contentDescription = "Share")
                     }
                     IconButton(onClick = { showMenu = !showMenu }) {
@@ -135,8 +125,9 @@ fun CashCalculatorApp(
                     ) {
                         DropdownMenuItem(
                             onClick = {
-                                // Handle item click
                                 showMenu = false
+                                //todo save result in history if not empty
+                                // option to add description/note to the record before saving
                             },
                             text = { Text(text = "Save to history") },
                             leadingIcon = {
@@ -148,8 +139,8 @@ fun CashCalculatorApp(
                         )
                         DropdownMenuItem(
                             onClick = {
-                                // Handle item click
                                 showMenu = false
+                                //todo view history screen
                             },
                             text = { Text(text = "View history") },
                             leadingIcon = {
@@ -177,14 +168,11 @@ fun CashCalculatorApp(
             )
         }
 
-        //todo add when block for different ui on landscape mode
-
         if (isLandscape) {
             LandscapeLayout(Modifier.padding(innerPadding), viewModel)
         } else {
             DefaultLayout(Modifier.padding(innerPadding), viewModel)
         }
-
     }
 }
 
@@ -192,7 +180,6 @@ fun CashCalculatorApp(
 fun DefaultLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     Column(
         modifier = modifier
-            //.padding(innerPadding)
             .fillMaxSize()
             .background(color = MaterialTheme.colorScheme.surfaceContainer)
     ) {
@@ -235,7 +222,6 @@ fun DefaultLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
 
         LazyColumn(
             modifier = Modifier
-                //.weight(1f)
                 .imePadding()
                 .padding(horizontal = 16.dp)
                 .background(
@@ -276,7 +262,7 @@ fun LandscapeLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
                     color = MaterialTheme.colorScheme.surface,
                     shape = Shapes().large
                 )
-                //.align(Alignment.CenterVertically),
+            //.align(Alignment.CenterVertically),
         ) {
             Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
                 Text(
@@ -307,7 +293,7 @@ fun LandscapeLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
             modifier = Modifier
                 .weight(1f)
                 //.imePadding()
-                .padding(vertical = 16.dp)
+                .padding(top = 16.dp, bottom = 16.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surface,
                     shape = Shapes().large
@@ -335,9 +321,7 @@ fun LandscapeLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
 
 @Composable
 fun DenominationRow(denomination: Int, count: String, onCountChange: (String) -> Unit) {
-    //var text by remember { mutableStateOf(count) }
     var isFocused by remember { mutableStateOf(false) }
-
 
     Row(
         modifier = Modifier
@@ -346,7 +330,7 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = getDenominationImageResource(denomination)),
+            painter = painterResource(id = Utils.getDenominationImageResource(denomination)),
             contentDescription = "₹$denomination note",
             modifier = Modifier
                 .width(52.dp)
@@ -377,7 +361,6 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
                         "0",
                         Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        //overflow = TextOverflow.Visible
                     )
                 }
             },
@@ -393,20 +376,6 @@ fun DenominationRow(denomination: Int, count: String, onCountChange: (String) ->
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End
         )
-    }
-}
-
-fun getDenominationImageResource(denomination: Int): Int {
-    // Replace with actual resource IDs for your denomination images
-    return when (denomination) {
-        2000 -> R.drawable.two_thousand_note
-        500 -> R.drawable.five_hundred_note
-        200 -> R.drawable.two_hundred_note
-        100 -> R.drawable.hundred_note
-        50 -> R.drawable.fifty_note
-        20 -> R.drawable.twenty_note
-        10 -> R.drawable.ten_note
-        else -> R.drawable.ten_note
     }
 }
 
@@ -431,8 +400,21 @@ fun getShareResult(viewModel: MainViewModel): String {
     return result.toString()
 }
 
+fun shareIntent(context: Activity, viewModel: MainViewModel) {
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, getShareResult(viewModel))
+        type = "text/plain"
+    }
+    val shareIntent =
+        Intent.createChooser(sendIntent, "Share cash calculation result via")
+    context.startActivity(shareIntent)
+}
 
-@Preview(showBackground = true)
+
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL)
+@Preview(device = "spec:parent=pixel_5,orientation=landscape")
 @Composable
 fun GreetingPreview() {
     CashCalculatorTheme {
@@ -440,14 +422,6 @@ fun GreetingPreview() {
             viewModel = viewModel<MainViewModel>(),
             onShareClick = {}
         )
-    }
-}
-
-@Preview(device = "spec:parent=pixel_5,orientation=landscape")
-@Composable
-private fun LandscapePreview() {
-    CashCalculatorTheme {
-        LandscapeLayout(viewModel = viewModel<MainViewModel>())
     }
 }
 
