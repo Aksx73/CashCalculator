@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation (libs.accompanist.systemuicontroller)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.androidx.splashscreen)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
