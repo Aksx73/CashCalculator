@@ -14,4 +14,8 @@ class CashRecordRepository(private val context: Context) {
 
     fun getSavedRecords() = recordsDao.getSavedRecords()
 
+    suspend fun deleteRecord(cashRecord: CashRecord) {
+        recordsDao.deleteRecord(cashRecord)
+    }
+
 }
