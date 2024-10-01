@@ -44,7 +44,7 @@ fun SavedRecordScreen(
     onBackClick: () -> Unit
 ) {
 
-    val savedRecords by viewModel.savedRecord.collectAsStateWithLifecycle()
+    val savedRecords by viewModel.savedRecords.collectAsStateWithLifecycle()
 
     Scaffold(modifier = modifier.fillMaxSize(),
         topBar = {

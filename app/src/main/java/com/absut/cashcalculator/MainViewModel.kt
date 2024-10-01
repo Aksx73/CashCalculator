@@ -21,7 +21,7 @@ class MainViewModel(
     var total by mutableLongStateOf(0)
     var totalNotes by mutableIntStateOf(0)
 
-    val savedRecord = repository.getSavedRecords()
+    val savedRecords = repository.getSavedRecords()
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),

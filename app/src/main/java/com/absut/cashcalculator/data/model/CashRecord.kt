@@ -10,10 +10,10 @@ import kotlinx.serialization.Serializer
 @Entity(tableName = "cash_records")
 @TypeConverters(MapConverter::class)
 data class CashRecord(
-	@PrimaryKey(autoGenerate = true) val id: Int,
+	@PrimaryKey(autoGenerate = true) val id: Int = 0,
 	val total: Long,
 	val noteDescription: Map<Int, String>, // {(2000,"34"),(500,"20")}
-	val totalNotes: Long,
+	val totalNotes: Int,
 	val message: String?,
 	val date: Long = System.currentTimeMillis()
 ) {

@@ -14,7 +14,7 @@ interface RecordsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveCashRecord(cashRecord: CashRecord)
 
-    @Query("SELECT * FROM cash_records")
+    @Query("SELECT * FROM cash_records ORDER BY date DESC")
     fun getSavedRecords(): Flow<List<CashRecord>>
 
     @Delete
