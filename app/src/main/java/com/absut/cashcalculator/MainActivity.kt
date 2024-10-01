@@ -64,6 +64,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
+import com.absut.cashcalculator.util.MainViewModelFactory
 import com.absut.cashcalculator.util.Utils
 import com.absut.cashcalculator.util.toIndianCurrencyString
 
@@ -74,7 +75,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CashCalculatorTheme {
-                val viewModel: MainViewModel = viewModel()
+                val viewModel: MainViewModel =
+                    viewModel(factory = MainViewModelFactory(applicationContext))
 
                 CashCalculatorApp(
                     viewModel = viewModel,
@@ -412,8 +414,14 @@ fun shareIntent(context: Activity, viewModel: MainViewModel) {
 }
 
 
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL
+)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL
+)
 @Preview(device = "spec:parent=pixel_5,orientation=landscape")
 @Composable
 fun GreetingPreview() {

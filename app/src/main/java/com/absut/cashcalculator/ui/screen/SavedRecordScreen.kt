@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -23,15 +24,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.absut.cashcalculator.MainViewModel
+import com.absut.cashcalculator.data.model.CashRecord
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
+import com.absut.cashcalculator.util.toIndianCurrencyString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavedRecordScreen(modifier: Modifier = Modifier) {
+fun SavedRecordScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+
+    val savedRecords by viewModel.savedRecord.collectAsStateWithLifecycle()
 
     Scaffold(modifier = modifier.fillMaxSize(),
         topBar = {
@@ -56,20 +64,20 @@ fun SavedRecordScreen(modifier: Modifier = Modifier) {
                 .background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
-             items(5) {
-                 SavedRecordListItem()
-             }
+            items(savedRecords) { record ->
+                SavedRecordListItem(record = record)
+            }
         }
 
     }
 }
 
 @Composable
-fun SavedRecordListItem(modifier: Modifier = Modifier) {
+fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = Shapes().large,
-        modifier = Modifier.padding(vertical = 6.dp)
+        modifier = modifier.padding(vertical = 6.dp)
     ) {
         Column(
             modifier = Modifier
@@ -77,9 +85,12 @@ fun SavedRecordListItem(modifier: Modifier = Modifier) {
                 .padding(16.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Notes: 10", style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    text = "12/05.2024 12 AM",
+                    text = "Notes: ${record.totalNotes}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = record.formattedDate.toString(),
                     Modifier.weight(1f),
                     textAlign = TextAlign.End,
                     style = MaterialTheme.typography.bodyMedium
@@ -87,14 +98,14 @@ fun SavedRecordListItem(modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.size(12.dp))
             Text(
-                text = "23,500",
+                text = record.total.toIndianCurrencyString(),
                 Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "2000x24 | 500x40 | 200x200 | 100x95",
+                text = getNoteDescriptionString(record.noteDescription),
                 Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
@@ -102,12 +113,30 @@ fun SavedRecordListItem(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.size(8.dp))
             Text(text = "Message", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.size(0.dp))
-            Text(text = "Lorem Ipsum", style = MaterialTheme.typography.bodyMedium, maxLines = 3)
+            Text(
+                text = record.message ?: "-",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3
+            )
         }
-
 
     }
 }
+
+fun getNoteDescriptionString(noteDescription: Map<Int, String>): String {
+    val result = StringBuilder()
+    for ((denom, count) in noteDescription) {
+        if (count.isNotEmpty() && (count.toLongOrNull() ?: 0) > 0) {
+            result.append("₹${denom}x$count")
+
+            if (denom != noteDescription.keys.last()) {
+                result.append(" | ")
+            }
+        }
+    }
+    return result.toString()
+}
+
 
 @Preview
 @Composable
@@ -116,7 +145,16 @@ private fun RecordListItemPreview() {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            SavedRecordListItem()
+            SavedRecordListItem(
+                record = CashRecord(
+                    id = 1,
+                    total = 234300,
+                    noteDescription = mapOf(2000 to "1", 500 to "1", 100 to "1"),
+                    totalNotes = 45,
+                    message = null,
+                    date = System.currentTimeMillis()
+                )
+            )
         }
     }
 }
@@ -126,6 +164,6 @@ private fun RecordListItemPreview() {
 @Composable
 private fun SavedRecordScreenPreview() {
     CashCalculatorTheme {
-        SavedRecordScreen()
+        //SavedRecordScreen()
     }
 }
