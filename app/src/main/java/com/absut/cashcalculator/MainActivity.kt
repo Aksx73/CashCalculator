@@ -61,8 +61,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
+import com.absut.cashcalculator.ui.screen.HomeScreen
+import com.absut.cashcalculator.ui.screen.SavedRecordScreen
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.MainViewModelFactory
 import com.absut.cashcalculator.util.Utils
@@ -73,311 +78,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         enableEdgeToEdge()
+
         setContent {
+            val navController = rememberNavController()
+
             CashCalculatorTheme {
                 val viewModel: MainViewModel =
                     viewModel(factory = MainViewModelFactory(applicationContext))
 
-                CashCalculatorApp(
-                    viewModel = viewModel,
-                    onShareClick = { shareIntent(this, viewModel) }
-                )
-
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CashCalculatorApp(
-    modifier: Modifier = Modifier,
-    viewModel: MainViewModel,
-    onShareClick: () -> Unit
-) {
-    var showMenu by remember { mutableStateOf(false) }
-    var openAlertDialog by remember { mutableStateOf(false) }
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-    Scaffold(modifier = modifier.fillMaxSize(),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Cash Calculator",
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                navigationIcon = {
-                    IconButton(onClick = { openAlertDialog = true }) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = "Reset")
+                NavHost(navController = navController, startDestination = "home") {
+                    composable("home") {
+                        HomeScreen(
+                            viewModel = viewModel,
+                            onViewSavedRecordClick = { navController.navigate("saved_record") },
+                            onShareClick = { shareIntent(this@MainActivity, viewModel) })
                     }
-                },
-                actions = {
-                    IconButton(onClick = { onShareClick() }) {
-                        Icon(Icons.Outlined.Share, contentDescription = "Share")
-                    }
-                    IconButton(onClick = { showMenu = !showMenu }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                showMenu = false
-                                //todo save result in history if not empty
-                                // option to add description/note to the record before saving
-                            },
-                            text = { Text(text = "Save to history") },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    contentDescription = "View history"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                showMenu = false
-                                //todo view history screen
-                            },
-                            text = { Text(text = "View history") },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    contentDescription = "View history"
-                                )
-                            }
+                    composable("saved_record") {
+                        SavedRecordScreen(
+                            viewModel = viewModel,
+                            onBackClick = navController::popBackStack
                         )
                     }
                 }
-            )
-        }
-    ) { innerPadding ->
-        if (openAlertDialog) {
-            ResetAlertDialog(
-                onDismissRequest = { openAlertDialog = false },
-                onConfirmation = {
-                    openAlertDialog = false
-                    viewModel.resetCalculator()
-                },
-                dialogTitle = "Reset cash counts?",
-                dialogText = "This action will remove all count records and cannot be undone",
-                icon = Icons.Default.Info
-            )
-        }
 
-        if (isLandscape) {
-            LandscapeLayout(Modifier.padding(innerPadding), viewModel)
-        } else {
-            DefaultLayout(Modifier.padding(innerPadding), viewModel)
-        }
-    }
-}
-
-@Composable
-fun DefaultLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = Shapes().large
-                ),
-        ) {
-            Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                Text(
-                    text = "Total",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = "Notes: ${viewModel.totalNotes}",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = viewModel.total.toIndianCurrencyString(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        Spacer(modifier = Modifier.size(24.dp))
-
-        LazyColumn(
-            modifier = Modifier
-                .imePadding()
-                .padding(horizontal = 16.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = Shapes().large
-                ),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-
-            items(
-                viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-            ) { (index, pair) ->
-                val (denomination, count) = pair
-                DenominationRow(
-                    denomination = denomination,
-                    count = count,
-                    onCountChange = { newCount ->
-                        viewModel.updateCount(index, newCount)
-                    }
-                )
             }
         }
-    }
-}
-
-@Composable
-fun LandscapeLayout(modifier: Modifier = Modifier, viewModel: MainViewModel) {
-    Row(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(0.5f)
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = Shapes().large
-                )
-            //.align(Alignment.CenterVertically),
-        ) {
-            Row(Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
-                Text(
-                    text = "Total",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = "Notes: ${viewModel.totalNotes}",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = viewModel.total.toIndianCurrencyString(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                //.imePadding()
-                .padding(top = 16.dp, bottom = 16.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = Shapes().large
-                ),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-
-            items(
-                viewModel.denominations.zip(viewModel.counts).withIndex().toList()
-            ) { (index, pair) ->
-                val (denomination, count) = pair
-                DenominationRow(
-                    denomination = denomination,
-                    count = count,
-                    onCountChange = { newCount ->
-                        viewModel.updateCount(index, newCount)
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.size(16.dp))
-    }
-}
-
-@Composable
-fun DenominationRow(denomination: Int, count: String, onCountChange: (String) -> Unit) {
-    var isFocused by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = Utils.getDenominationImageResource(denomination)),
-            contentDescription = "₹$denomination note",
-            modifier = Modifier
-                .width(52.dp)
-                .height(21.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text = "$denomination", textAlign = TextAlign.Start, modifier = Modifier.weight(1f))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "x")
-        Spacer(modifier = Modifier.width(24.dp))
-        OutlinedTextFieldWithCustomContentPadding(
-            value = count,
-            onValueChange = { newValue ->
-                if (newValue.isEmpty() || newValue.toIntOrNull() != null) {
-                    onCountChange(newValue)
-                }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .weight(1f)
-                //.defaultMinSize(minWidth = 80.dp)
-                //.height(54.dp)
-                .onFocusChanged { isFocused = it.isFocused },
-            shape = Shapes().medium,
-            placeholder = {
-                if (!isFocused) {
-                    Text(
-                        "0",
-                        Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            },
-            textStyle = TextStyle(textAlign = TextAlign.Center),
-            singleLine = true,
-            contentPadding = PaddingValues(10.dp)
-        )
-        Spacer(modifier = Modifier.width(24.dp))
-        Text(text = "=")
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = "${denomination * (count.toLongOrNull() ?: 0)}",
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End
-        )
     }
 }
 
@@ -411,25 +136,5 @@ fun shareIntent(context: Activity, viewModel: MainViewModel) {
     val shareIntent =
         Intent.createChooser(sendIntent, "Share cash calculation result via")
     context.startActivity(shareIntent)
-}
-
-
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL
-)
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL
-)
-@Preview(device = "spec:parent=pixel_5,orientation=landscape")
-@Composable
-fun GreetingPreview() {
-    CashCalculatorTheme {
-        CashCalculatorApp(
-            viewModel = viewModel<MainViewModel>(),
-            onShareClick = {}
-        )
-    }
 }
 

@@ -29,7 +29,6 @@ class MainViewModel(
         )
 
     init {
-        //counts.addAll(List(denominations.size) { 0 })
         resetCalculator()
     }
 

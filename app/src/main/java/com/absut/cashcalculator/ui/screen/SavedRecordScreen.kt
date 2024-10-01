@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import com.absut.cashcalculator.MainViewModel
 import com.absut.cashcalculator.data.model.CashRecord
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
@@ -37,7 +38,11 @@ import com.absut.cashcalculator.util.toIndianCurrencyString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavedRecordScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+fun SavedRecordScreen(
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel,
+    onBackClick: () -> Unit
+) {
 
     val savedRecords by viewModel.savedRecord.collectAsStateWithLifecycle()
 
@@ -47,7 +52,7 @@ fun SavedRecordScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
                 title = { Text("Saved Records") },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 navigationIcon = {
-                    IconButton(onClick = { /*todo*/ }) {
+                    IconButton(onClick = { onBackClick() }) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Navigate back"
@@ -59,9 +64,9 @@ fun SavedRecordScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerpadding)
-                .background(color = MaterialTheme.colorScheme.surfaceContainer),
+				.fillMaxSize()
+				.padding(innerpadding)
+				.background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
             items(savedRecords) { record ->
@@ -81,8 +86,8 @@ fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+				.fillMaxWidth()
+				.padding(16.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -90,7 +95,7 @@ fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = record.formattedDate.toString(),
+                    text = record.formattedDate,
                     Modifier.weight(1f),
                     textAlign = TextAlign.End,
                     style = MaterialTheme.typography.bodyMedium
