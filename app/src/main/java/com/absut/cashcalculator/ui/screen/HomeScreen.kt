@@ -127,7 +127,8 @@ fun HomeScreen(
                     }
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
+                        shape = Shapes().large
                     ) {
                         DropdownMenuItem(
                             onClick = {
