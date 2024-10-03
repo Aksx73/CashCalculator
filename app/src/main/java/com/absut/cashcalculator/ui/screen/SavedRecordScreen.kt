@@ -104,6 +104,7 @@ fun SavedRecordScreen(
                         //todo delete record and show snackBar with undo action
 
                         //delete record and save it in variable for undo purpose
+
                         deletedRecord = record
                         viewModel.deleteRecord(record)
 
@@ -244,7 +245,9 @@ private fun SwipeBox(
 
     when (swipeState.currentValue) {
         SwipeToDismissBoxValue.EndToStart -> {
-            onFromRightSwipe()
+            LaunchedEffect(swipeState) {
+                onFromRightSwipe()
+            }
         }
 
         SwipeToDismissBoxValue.StartToEnd -> {
