@@ -2,27 +2,36 @@ package com.absut.cashcalculator.ui.screen
 
 import android.content.res.Configuration
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -34,13 +43,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,9 +62,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -59,14 +74,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import com.absut.cashcalculator.MainViewModel
 import com.absut.cashcalculator.R
 import com.absut.cashcalculator.data.model.CashRecord
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
+import com.absut.cashcalculator.ui.components.TextFieldDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.Utils
 import com.absut.cashcalculator.util.toIndianCurrencyString
@@ -85,6 +99,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var openAlertDialog by remember { mutableStateOf(false) }
+    var openAddNoteDialog by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -117,30 +132,15 @@ fun HomeScreen(
                         DropdownMenuItem(
                             onClick = {
                                 showMenu = false
-                                //todo save result in history if not empty
-                                // option to add description/note to the record before saving
-
                                 if (viewModel.total > 0) {
-                                    val record = createSaveRecordData(
-                                        viewModel,
-                                        "this test description for reference of this saved record"
-                                    )
-                                    viewModel.saveRecord(record)
-                                    Toast.makeText(
-                                        context,
-                                        "Record saved successfully",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    viewModel.resetCalculator()
+                                    openAddNoteDialog = true
                                 } else {
                                     scope.launch {
                                         snackbarHostState.showSnackbar(
-                                            "Cannot save empty record",
-                                            duration = SnackbarDuration.Short
+                                            "Cannot save empty record"
                                         )
                                     }
                                 }
-
 
                             },
                             text = { Text(text = "Save record") },
@@ -178,12 +178,38 @@ fun HomeScreen(
                 },
                 dialogTitle = "Reset cash counts?",
                 dialogText = "This action will remove all count records and cannot be undone",
-                icon = Icons.Default.Info
+                icon = Icons.Default.Info,
+                "Reset","Cancel"
+            )
+        }
+        if (openAddNoteDialog) {
+            TextFieldDialog(
+                onDismiss = { openAddNoteDialog = false },
+                onConfirm = { note ->
+                    openAddNoteDialog = false
+
+                    val record = createSaveRecordData(
+                        viewModel,
+                        note
+                    )
+                    viewModel.saveRecord(record)
+                    Toast.makeText(
+                        context,
+                        "Record saved successfully",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    viewModel.resetCalculator()
+                }
             )
         }
 
         if (isLandscape) {
-            LandscapeLayout(Modifier.padding(innerPadding), viewModel)
+            LandscapeLayout(
+                Modifier
+                    .padding(innerPadding)
+                    .windowInsetsPadding(WindowInsets.displayCutout),
+                viewModel
+            )
         } else {
             DefaultLayout(Modifier.padding(innerPadding), viewModel)
         }
@@ -403,7 +429,8 @@ fun createSaveRecordData(viewModel: MainViewModel, message: String?): CashRecord
         totalNotes = viewModel.totalNotes,
         total = viewModel.total,
         noteDescription = nonEmptyMap,
-        message = message
+        message = message,
+        date = System.currentTimeMillis()
     )
 }
 

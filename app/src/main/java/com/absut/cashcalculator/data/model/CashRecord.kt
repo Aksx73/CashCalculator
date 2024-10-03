@@ -15,7 +15,7 @@ data class CashRecord(
 	val noteDescription: Map<Int, String>, // {(2000,"34"),(500,"20")}
 	val totalNotes: Int,
 	val message: String?,
-	val date: Long = System.currentTimeMillis()
+	val date: Long
 ) {
 	var formattedDate: String = DateFormat.format("dd/MM/yyyy hh:mm aa", date).toString()
 }

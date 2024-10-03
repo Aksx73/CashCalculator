@@ -18,6 +18,8 @@ fun ResetAlertDialog(
     dialogTitle: String,
     dialogText: String,
     icon: ImageVector,
+    positiveButtonTitle: String,
+    negativeButtonTitle: String,
 ) {
     AlertDialog(
         /*icon = {
@@ -38,7 +40,7 @@ fun ResetAlertDialog(
                     onConfirmation()
                 }
             ) {
-                Text("Reset")
+                Text(positiveButtonTitle)
             }
         },
         dismissButton = {
@@ -47,7 +49,7 @@ fun ResetAlertDialog(
                     onDismissRequest()
                 }
             ) {
-                Text("Cancel")
+                Text(negativeButtonTitle)
             }
         }
     )
@@ -61,7 +63,9 @@ private fun AlertDialogPreview() {
         onConfirmation = { /*TODO*/ },
         dialogTitle = "Reset cash count values",
         dialogText = "Reset cash count values",
-        icon = Icons.Default.Call
+        icon = Icons.Default.Call,
+        positiveButtonTitle = "Reset",
+        negativeButtonTitle = "Cancel"
     )
 
 }
