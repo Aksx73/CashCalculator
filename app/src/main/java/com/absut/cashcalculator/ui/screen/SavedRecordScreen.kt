@@ -70,6 +70,7 @@ fun SavedRecordScreen(
     val savedRecords by viewModel.savedRecords.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showSnackbar by remember { mutableStateOf(false) }
     var deletedRecord: CashRecord? by remember {
         mutableStateOf(null)
     }
@@ -98,8 +99,9 @@ fun SavedRecordScreen(
                 .background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentPadding = PaddingValues(/*horizontal = 16.dp,*/ vertical = 8.dp)
         ) {
-            items(savedRecords) { record ->
+            items(savedRecords, key = {it.id }) { record ->
                 SwipeBox(
+                    //record = record,
                     onFromRightSwipe = {
                         //todo delete record and show snackBar with undo action
 
@@ -107,8 +109,9 @@ fun SavedRecordScreen(
 
                         deletedRecord = record
                         viewModel.deleteRecord(record)
+                        showSnackbar = true
 
-                        scope.launch {
+                       /* scope.launch {
                             val snackbarResult = snackbarHostState.showSnackbar(
                                 "Record deleted!",
                                 duration = SnackbarDuration.Long,
@@ -119,7 +122,7 @@ fun SavedRecordScreen(
                                 deletedRecord?.let { viewModel.saveRecord(it) }
                                 deletedRecord = null
                             }
-                        }
+                        }*/
                     },
                     onFromLeftSwipe = {
                         //todo delete record and show snackbar with undo action
@@ -132,6 +135,24 @@ fun SavedRecordScreen(
                 ) {
                     SavedRecordListItem(record = record)
                 }
+            }
+        }
+
+        if (showSnackbar){
+            LaunchedEffect(Unit) {
+                val snackbarResult = snackbarHostState.showSnackbar(
+                    "Record deleted!",
+                    duration = SnackbarDuration.Long,
+                    actionLabel = "Undo"
+                )
+                if (snackbarResult == SnackbarResult.ActionPerformed) {
+                    deletedRecord?.let {
+                        viewModel.saveRecord(it)
+                    }
+                }
+                showSnackbar = false // Reset showSnackbar
+                deletedRecord = null // Reset deletedRecord
+
             }
         }
 
@@ -191,10 +212,11 @@ fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
 
 @Composable
 private fun SwipeBox(
+    //record: CashRecord,
     modifier: Modifier = Modifier,
     onFromRightSwipe: () -> Unit,
     onFromLeftSwipe: () -> Unit,
-    content: @Composable () -> Unit
+   content: @Composable () -> Unit
 ) {
     val swipeState = rememberSwipeToDismissBoxState(positionalThreshold = { it * .5f })
 
@@ -241,6 +263,7 @@ private fun SwipeBox(
         }
     ) {
         content()
+        //SavedRecordListItem(record = record)
     }
 
     when (swipeState.currentValue) {
@@ -257,8 +280,7 @@ private fun SwipeBox(
             }
         }
 
-        SwipeToDismissBoxValue.Settled -> {
-        }
+        else -> {}
     }
 }
 
