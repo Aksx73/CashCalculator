@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class MainViewModel(
     private val repository: CashRecordRepository
 ) : ViewModel() {
-    val denominations = listOf(2000, 500, 200, 100, 50, 20, 10)
+    val denominations = listOf(/*2000,*/ 500, 200, 100, 50, 20, 10)
     var counts = mutableStateListOf<String>()
     var total by mutableLongStateOf(0)
     var totalNotes by mutableIntStateOf(0)
