@@ -40,6 +40,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,11 +70,9 @@ fun SavedRecordScreen(
 ) {
     val savedRecords by viewModel.savedRecords.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var showSnackbar by remember { mutableStateOf(false) }
-    var deletedRecord: CashRecord? by remember {
-        mutableStateOf(null)
-    }
+    var deletedRecord: CashRecord? by remember { mutableStateOf(null) }
+    var restoredRecordId: Int? by remember { mutableStateOf(null) }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -100,33 +99,23 @@ fun SavedRecordScreen(
             contentPadding = PaddingValues(/*horizontal = 16.dp,*/ vertical = 8.dp)
         ) {
             items(savedRecords, key = {it.id }) { record ->
+                val isRestored = record.id == restoredRecordId
+
                 SwipeBox(
-                    //record = record,
                     onFromRightSwipe = {
-                        //todo delete record and show snackBar with undo action
-
                         //delete record and save it in variable for undo purpose
-
-                        deletedRecord = record
-                        viewModel.deleteRecord(record)
-                        showSnackbar = true
-
-                       /* scope.launch {
-                            val snackbarResult = snackbarHostState.showSnackbar(
-                                "Record deleted!",
-                                duration = SnackbarDuration.Long,
-                                actionLabel = "Undo"
-                            )
-                            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                //insert deleted record in db
-                                deletedRecord?.let { viewModel.saveRecord(it) }
-                                deletedRecord = null
-                            }
-                        }*/
+                        if(!isRestored) {
+                            deletedRecord = record
+                            viewModel.deleteRecord(record)
+                            showSnackbar = true
+                        }
                     },
                     onFromLeftSwipe = {
-                        //todo delete record and show snackbar with undo action
-
+                        if(!isRestored) {
+                            deletedRecord = record
+                            viewModel.deleteRecord(record)
+                            showSnackbar = true
+                        }
                     },
                     modifier = Modifier.animateItem(
                         fadeInSpec = null,
@@ -148,11 +137,11 @@ fun SavedRecordScreen(
                 if (snackbarResult == SnackbarResult.ActionPerformed) {
                     deletedRecord?.let {
                         viewModel.saveRecord(it)
+                        restoredRecordId = it.id
                     }
+                    deletedRecord = null // Reset deletedRecord
                 }
                 showSnackbar = false // Reset showSnackbar
-                deletedRecord = null // Reset deletedRecord
-
             }
         }
 
@@ -212,7 +201,6 @@ fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
 
 @Composable
 private fun SwipeBox(
-    //record: CashRecord,
     modifier: Modifier = Modifier,
     onFromRightSwipe: () -> Unit,
     onFromLeftSwipe: () -> Unit,
@@ -263,13 +251,13 @@ private fun SwipeBox(
         }
     ) {
         content()
-        //SavedRecordListItem(record = record)
     }
 
     when (swipeState.currentValue) {
         SwipeToDismissBoxValue.EndToStart -> {
             LaunchedEffect(swipeState) {
                 onFromRightSwipe()
+                swipeState.reset()
             }
         }
 
