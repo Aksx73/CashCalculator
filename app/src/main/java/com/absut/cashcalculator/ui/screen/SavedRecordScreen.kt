@@ -111,6 +111,7 @@ fun SavedRecordScreen(
                         }
                     },
                     onFromLeftSwipe = {
+                        //delete record and save it in variable for undo purpose
                         if(!isRestored) {
                             deletedRecord = record
                             viewModel.deleteRecord(record)
