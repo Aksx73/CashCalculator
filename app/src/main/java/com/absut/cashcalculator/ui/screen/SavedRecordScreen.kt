@@ -73,7 +73,6 @@ fun SavedRecordScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showSnackbar by remember { mutableStateOf(false) }
     var deletedRecord: CashRecord? by remember { mutableStateOf(null) }
-    //var restoredRecordId: Int? by remember { mutableStateOf(null) }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -100,34 +99,6 @@ fun SavedRecordScreen(
             contentPadding = PaddingValues(/*horizontal = 16.dp,*/ vertical = 8.dp)
         ) {
             items(savedRecords, key = { it.id }) { record ->
-                /*val isRestored = record.id == restoredRecordId
-
-                SwipeBox(
-                    onFromRightSwipe = {
-                        //delete record and save it in variable for undo purpose
-                        if (!isRestored) {
-                            deletedRecord = record
-                            viewModel.deleteRecord(record)
-                            showSnackbar = true
-                        }
-                    },
-                    onFromLeftSwipe = {
-                        //delete record and save it in variable for undo purpose
-                        if (!isRestored) {
-                            deletedRecord = record
-                            viewModel.deleteRecord(record)
-                            showSnackbar = true
-                        }
-                    },
-                    modifier = Modifier.animateItem(
-                        fadeInSpec = null,
-                        fadeOutSpec = null
-                    )
-                ) {
-                    SavedRecordListItem(record = record)
-                }*/
-
-
                 SwipeToDeleteContainer(
                     modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
                     item = record,
@@ -138,9 +109,7 @@ fun SavedRecordScreen(
                     }) {
                     SavedRecordListItem(record = record)
                 }
-
             }
-
         }
 
         if (showSnackbar) {
@@ -153,7 +122,6 @@ fun SavedRecordScreen(
                 if (snackbarResult == SnackbarResult.ActionPerformed) {
                     deletedRecord?.let {
                         viewModel.saveRecord(it)
-                       // restoredRecordId = it.id
                     }
                     deletedRecord = null // Reset deletedRecord
                 }
