@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,7 +73,7 @@ fun SavedRecordScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showSnackbar by remember { mutableStateOf(false) }
     var deletedRecord: CashRecord? by remember { mutableStateOf(null) }
-    var restoredRecordId: Int? by remember { mutableStateOf(null) }
+    //var restoredRecordId: Int? by remember { mutableStateOf(null) }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -98,13 +99,13 @@ fun SavedRecordScreen(
                 .background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentPadding = PaddingValues(/*horizontal = 16.dp,*/ vertical = 8.dp)
         ) {
-            items(savedRecords, key = {it.id }) { record ->
-                val isRestored = record.id == restoredRecordId
+            items(savedRecords, key = { it.id }) { record ->
+                /*val isRestored = record.id == restoredRecordId
 
                 SwipeBox(
                     onFromRightSwipe = {
                         //delete record and save it in variable for undo purpose
-                        if(!isRestored) {
+                        if (!isRestored) {
                             deletedRecord = record
                             viewModel.deleteRecord(record)
                             showSnackbar = true
@@ -112,7 +113,7 @@ fun SavedRecordScreen(
                     },
                     onFromLeftSwipe = {
                         //delete record and save it in variable for undo purpose
-                        if(!isRestored) {
+                        if (!isRestored) {
                             deletedRecord = record
                             viewModel.deleteRecord(record)
                             showSnackbar = true
@@ -124,11 +125,25 @@ fun SavedRecordScreen(
                     )
                 ) {
                     SavedRecordListItem(record = record)
+                }*/
+
+
+                SwipeToDeleteContainer(
+                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                    item = record,
+                    onDelete = {
+                        deletedRecord = record
+                        viewModel.deleteRecord(record)
+                        showSnackbar = true
+                    }) {
+                    SavedRecordListItem(record = record)
                 }
+
             }
+
         }
 
-        if (showSnackbar){
+        if (showSnackbar) {
             LaunchedEffect(Unit) {
                 val snackbarResult = snackbarHostState.showSnackbar(
                     "Record deleted!",
@@ -138,7 +153,7 @@ fun SavedRecordScreen(
                 if (snackbarResult == SnackbarResult.ActionPerformed) {
                     deletedRecord?.let {
                         viewModel.saveRecord(it)
-                        restoredRecordId = it.id
+                       // restoredRecordId = it.id
                     }
                     deletedRecord = null // Reset deletedRecord
                 }
@@ -205,7 +220,7 @@ private fun SwipeBox(
     modifier: Modifier = Modifier,
     onFromRightSwipe: () -> Unit,
     onFromLeftSwipe: () -> Unit,
-   content: @Composable () -> Unit
+    content: @Composable () -> Unit
 ) {
     val swipeState = rememberSwipeToDismissBoxState(positionalThreshold = { it * .5f })
 
@@ -271,6 +286,78 @@ private fun SwipeBox(
 
         else -> {}
     }
+}
+
+@Composable
+fun <T> SwipeToDeleteContainer(
+    modifier: Modifier = Modifier,
+    item: T,
+    onDelete: (T) -> Unit,
+    content: @Composable (T) -> Unit
+) {
+    var isRemoved by remember {
+        mutableStateOf(false)
+    }
+
+    val state = rememberSwipeToDismissBoxState(
+        positionalThreshold = { it * .5f },
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                isRemoved = true
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    LaunchedEffect(isRemoved) {
+        if (isRemoved) {
+            onDelete(item)
+        }
+    }
+
+    SwipeToDismissBox(
+        modifier = modifier.animateContentSize(),
+        state = state,
+        backgroundContent = {
+            DeleteBackground(
+                swipeDismissState = state,
+                modifier = Modifier.padding(vertical = 6.dp, horizontal = 16.dp)
+            )
+        },
+        enableDismissFromStartToEnd = false,
+        content = {
+            content(item)
+        }
+    )
+
+}
+
+@Composable
+fun DeleteBackground(
+    modifier: Modifier = Modifier,
+    swipeDismissState: SwipeToDismissBoxState
+) {
+    val color = if (swipeDismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+        MaterialTheme.colorScheme.errorContainer
+    } else Color.Transparent
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            //.padding(16.dp)
+            .background(color, shape = Shapes().large),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            modifier = Modifier.minimumInteractiveComponentSize(),
+            imageVector = Icons.Outlined.Delete,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onErrorContainer
+        )
+    }
+
 }
 
 fun getNoteDescriptionString(noteDescription: Map<Int, String>): String {
