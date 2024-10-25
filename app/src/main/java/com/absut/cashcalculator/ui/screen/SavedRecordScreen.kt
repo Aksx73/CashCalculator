@@ -50,12 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.absut.cashcalculator.MainViewModel
+import com.absut.cashcalculator.R
 import com.absut.cashcalculator.data.model.CashRecord
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
@@ -88,6 +90,11 @@ fun SavedRecordScreen(
                         )
                     }
                 },
+               /* actions = {
+                    IconButton(onClick = { savedRecords.reversed() }) {
+                        Icon(painterResource(id = R.drawable.ic_sort_24), contentDescription = "Share")
+                    }
+                }*/
             )
         }) { innerpadding ->
 
