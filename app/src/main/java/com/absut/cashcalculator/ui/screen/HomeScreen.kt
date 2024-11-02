@@ -1,11 +1,14 @@
 package com.absut.cashcalculator.ui.screen
 
 import android.content.res.Configuration
+import android.widget.Space
 import android.widget.Toast
+import androidx.activity.result.launch
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,6 +37,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -41,8 +46,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,9 +58,11 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,10 +83,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.view.isVisible
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.MainViewModel
 import com.absut.cashcalculator.R
 import com.absut.cashcalculator.data.model.CashRecord
+import com.absut.cashcalculator.shareIntent
 import com.absut.cashcalculator.ui.components.OutlinedTextFieldWithCustomContentPadding
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.components.TextFieldDialog
@@ -102,6 +113,8 @@ fun HomeScreen(
     var openAddNoteDialog by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    var showShareOptionBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -119,7 +132,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onShareClick() }) {
+                    IconButton(onClick = { showShareOptionBottomSheet = true }) {
                         Icon(Icons.Outlined.Share, contentDescription = "Share")
                     }
                     IconButton(onClick = { showMenu = !showMenu }) {
@@ -180,7 +193,7 @@ fun HomeScreen(
                 dialogTitle = "Reset cash counts?",
                 dialogText = "This action will remove all count records and cannot be undone",
                 icon = Icons.Default.Info,
-                "Reset","Cancel"
+                "Reset", "Cancel"
             )
         }
         if (openAddNoteDialog) {
@@ -202,6 +215,58 @@ fun HomeScreen(
                     viewModel.resetCalculator()
                 }
             )
+        }
+
+        if (showShareOptionBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showShareOptionBottomSheet = false
+                },
+                sheetState = sheetState,
+                dragHandle = { BottomSheetDefaults.DragHandle() },
+            ) {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable {
+                            onShareClick()
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showShareOptionBottomSheet = false
+                                }
+                            }
+                        }
+                ) {
+                    Icon(
+                        modifier = Modifier.padding(end = 16.dp),
+                        painter = painterResource(R.drawable.ic_text_fields_24),
+                        contentDescription = "Share text"
+                    )
+                    Text(text = "Share as Text")
+                }
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showShareOptionBottomSheet = false
+                            }
+                        }
+                        //todo
+
+                    }) {
+                    Icon(
+                        modifier = Modifier.padding(end = 16.dp),
+                        painter = painterResource(R.drawable.ic_image_24),
+                        contentDescription = "Share screenshot"
+                    )
+                    Text(text = "Share as Image")
+                }
+                Spacer(Modifier.size(8.dp))
+            }
         }
 
         if (isLandscape) {
