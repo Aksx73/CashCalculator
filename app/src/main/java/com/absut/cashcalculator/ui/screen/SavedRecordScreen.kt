@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -49,12 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.absut.cashcalculator.MainViewModel
+import com.absut.cashcalculator.R
 import com.absut.cashcalculator.data.model.CashRecord
 import com.absut.cashcalculator.ui.components.ResetAlertDialog
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
@@ -72,7 +75,6 @@ fun SavedRecordScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showSnackbar by remember { mutableStateOf(false) }
     var deletedRecord: CashRecord? by remember { mutableStateOf(null) }
-    var restoredRecordId: Int? by remember { mutableStateOf(null) }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -88,6 +90,11 @@ fun SavedRecordScreen(
                         )
                     }
                 },
+               /* actions = {
+                    IconButton(onClick = { savedRecords.reversed() }) {
+                        Icon(painterResource(id = R.drawable.ic_sort_24), contentDescription = "Share")
+                    }
+                }*/
             )
         }) { innerpadding ->
 
@@ -98,37 +105,21 @@ fun SavedRecordScreen(
                 .background(color = MaterialTheme.colorScheme.surfaceContainer),
             contentPadding = PaddingValues(/*horizontal = 16.dp,*/ vertical = 8.dp)
         ) {
-            items(savedRecords, key = {it.id }) { record ->
-                val isRestored = record.id == restoredRecordId
-
-                SwipeBox(
-                    onFromRightSwipe = {
-                        //delete record and save it in variable for undo purpose
-                        if(!isRestored) {
-                            deletedRecord = record
-                            viewModel.deleteRecord(record)
-                            showSnackbar = true
-                        }
-                    },
-                    onFromLeftSwipe = {
-                        //delete record and save it in variable for undo purpose
-                        if(!isRestored) {
-                            deletedRecord = record
-                            viewModel.deleteRecord(record)
-                            showSnackbar = true
-                        }
-                    },
-                    modifier = Modifier.animateItem(
-                        fadeInSpec = null,
-                        fadeOutSpec = null
-                    )
-                ) {
+            items(savedRecords, key = { it.id }) { record ->
+                SwipeToDeleteContainer(
+                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                    item = record,
+                    onDelete = {
+                        deletedRecord = record
+                        viewModel.deleteRecord(record)
+                        showSnackbar = true
+                    }) {
                     SavedRecordListItem(record = record)
                 }
             }
         }
 
-        if (showSnackbar){
+        if (showSnackbar) {
             LaunchedEffect(Unit) {
                 val snackbarResult = snackbarHostState.showSnackbar(
                     "Record deleted!",
@@ -138,7 +129,6 @@ fun SavedRecordScreen(
                 if (snackbarResult == SnackbarResult.ActionPerformed) {
                     deletedRecord?.let {
                         viewModel.saveRecord(it)
-                        restoredRecordId = it.id
                     }
                     deletedRecord = null // Reset deletedRecord
                 }
@@ -201,76 +191,75 @@ fun SavedRecordListItem(modifier: Modifier = Modifier, record: CashRecord) {
 }
 
 @Composable
-private fun SwipeBox(
+fun <T> SwipeToDeleteContainer(
     modifier: Modifier = Modifier,
-    onFromRightSwipe: () -> Unit,
-    onFromLeftSwipe: () -> Unit,
-   content: @Composable () -> Unit
+    item: T,
+    onDelete: (T) -> Unit,
+    content: @Composable (T) -> Unit
 ) {
-    val swipeState = rememberSwipeToDismissBoxState(positionalThreshold = { it * .5f })
+    var isRemoved by remember {
+        mutableStateOf(false)
+    }
 
-    lateinit var icon: ImageVector
-    lateinit var alignment: Alignment
-    val color: Color
-
-    when (swipeState.dismissDirection) {
-        SwipeToDismissBoxValue.EndToStart -> {
-            icon = Icons.Outlined.Delete
-            alignment = Alignment.CenterEnd
-            color = MaterialTheme.colorScheme.errorContainer
+    val state = rememberSwipeToDismissBoxState(
+        positionalThreshold = { it * .5f },
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                isRemoved = true
+                true
+            } else {
+                false
+            }
         }
+    )
 
-        SwipeToDismissBoxValue.StartToEnd -> {
-            icon = Icons.Outlined.Delete
-            alignment = Alignment.CenterStart
-            color = MaterialTheme.colorScheme.errorContainer
-        }
-
-        SwipeToDismissBoxValue.Settled -> {
-            icon = Icons.Outlined.Delete
-            alignment = Alignment.CenterEnd
-            color = Color.Transparent
+    LaunchedEffect(isRemoved) {
+        if (isRemoved) {
+            onDelete(item)
         }
     }
 
     SwipeToDismissBox(
         modifier = modifier.animateContentSize(),
-        state = swipeState,
+        state = state,
         backgroundContent = {
-            Box(
-                contentAlignment = alignment,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 6.dp, horizontal = 16.dp)
-                    .background(color, shape = Shapes().large),
-            ) {
-                Icon(
-                    modifier = Modifier.minimumInteractiveComponentSize(),
-                    imageVector = icon, contentDescription = null
-                )
-            }
+            DeleteBackground(
+                swipeDismissState = state,
+                modifier = Modifier.padding(vertical = 6.dp, horizontal = 16.dp)
+            )
+        },
+        enableDismissFromStartToEnd = false,
+        content = {
+            content(item)
         }
+    )
+
+}
+
+@Composable
+fun DeleteBackground(
+    modifier: Modifier = Modifier,
+    swipeDismissState: SwipeToDismissBoxState
+) {
+    val color = if (swipeDismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+        MaterialTheme.colorScheme.errorContainer
+    } else Color.Transparent
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            //.padding(16.dp)
+            .background(color, shape = Shapes().large),
+        contentAlignment = Alignment.CenterEnd
     ) {
-        content()
+        Icon(
+            modifier = Modifier.minimumInteractiveComponentSize(),
+            imageVector = Icons.Outlined.Delete,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onErrorContainer
+        )
     }
 
-    when (swipeState.currentValue) {
-        SwipeToDismissBoxValue.EndToStart -> {
-            LaunchedEffect(swipeState) {
-                onFromRightSwipe()
-                swipeState.reset()
-            }
-        }
-
-        SwipeToDismissBoxValue.StartToEnd -> {
-            LaunchedEffect(swipeState) {
-                onFromLeftSwipe()
-                swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-            }
-        }
-
-        else -> {}
-    }
 }
 
 fun getNoteDescriptionString(noteDescription: Map<Int, String>): String {
