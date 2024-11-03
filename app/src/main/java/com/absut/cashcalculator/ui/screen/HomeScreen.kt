@@ -107,7 +107,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var openAlertDialog by remember { mutableStateOf(false) }
     var openAddNoteDialog by remember { mutableStateOf(false) }
@@ -187,6 +187,7 @@ fun HomeScreen(
             ResetAlertDialog(
                 onDismissRequest = { openAlertDialog = false },
                 onConfirmation = {
+                    focusManager.clearFocus()
                     openAlertDialog = false
                     viewModel.resetCalculator()
                 },
