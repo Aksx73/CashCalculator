@@ -1,6 +1,11 @@
 package com.absut.cashcalculator.ui.screen
 
+import android.content.Context
+import android.content.Intent
+import android.content.Intent.createChooser
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.net.Uri
 import android.widget.Space
 import android.widget.Toast
 import androidx.activity.result.launch
@@ -69,12 +74,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -83,6 +94,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.absut.cashcalculator.MainViewModel
@@ -96,8 +109,10 @@ import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.Utils
 import com.absut.cashcalculator.util.toIndianCurrencyString
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -115,6 +130,16 @@ fun HomeScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     var showShareOptionBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val focusManager = LocalFocusManager.current
+    val graphicsLayer = rememberGraphicsLayer()
+
+    fun shareBitmapFromComposable() {
+        coroutineScope.launch {
+            val bitmap = graphicsLayer.toImageBitmap()
+            val uri = bitmap.asAndroidBitmap().saveImage(context)
+            shareBitmap(context, uri)
+        }
+    }
 
     Scaffold(modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -149,7 +174,7 @@ fun HomeScreen(
                                 if (viewModel.total > 0) {
                                     openAddNoteDialog = true
                                 } else {
-                                    scope.launch {
+                                    coroutineScope.launch {
                                         snackbarHostState.showSnackbar(
                                             "Cannot save empty record"
                                         )
@@ -217,7 +242,6 @@ fun HomeScreen(
                 }
             )
         }
-
         if (showShareOptionBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
@@ -226,18 +250,19 @@ fun HomeScreen(
                 sheetState = sheetState,
                 dragHandle = { BottomSheetDefaults.DragHandle() },
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                         .clickable {
                             onShareClick()
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    showShareOptionBottomSheet = false
+                            coroutineScope
+                                .launch { sheetState.hide() }
+                                .invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        showShareOptionBottomSheet = false
+                                    }
                                 }
-                            }
                         }
                 ) {
                     Icon(
@@ -251,13 +276,17 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .clickable {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showShareOptionBottomSheet = false
+                        focusManager.clearFocus()
+                        shareBitmapFromComposable()
+                        coroutineScope
+                            .launch {
+                                sheetState.hide()
                             }
-                        }
-                        //todo
-
+                            .invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showShareOptionBottomSheet = false
+                                }
+                            }
                     }) {
                     Icon(
                         modifier = Modifier.padding(end = 16.dp),
@@ -274,11 +303,33 @@ fun HomeScreen(
             LandscapeLayout(
                 Modifier
                     .padding(innerPadding)
-                    .windowInsetsPadding(WindowInsets.displayCutout),
+                    .windowInsetsPadding(WindowInsets.displayCutout)
+                    .drawWithCache {
+                        onDrawWithContent {
+                            graphicsLayer.record {
+                                this@onDrawWithContent.drawContent()
+                            }
+                            drawLayer(graphicsLayer)
+                        }
+                    },
                 viewModel
             )
-        } else {
-            DefaultLayout(Modifier.padding(innerPadding), viewModel)
+        }
+        else {
+            DefaultLayout(
+                Modifier
+                    .padding(innerPadding)
+                    .drawWithCache {
+                        onDrawWithContent {
+                            graphicsLayer.record {
+                                this@onDrawWithContent.drawContent()
+                            }
+                            drawLayer(graphicsLayer)
+                        }
+                    },
+                viewModel
+            )
+
         }
     }
 }
@@ -499,6 +550,33 @@ fun createSaveRecordData(viewModel: MainViewModel, message: String?): CashRecord
         message = message,
         date = System.currentTimeMillis()
     )
+}
+
+private suspend fun Bitmap.saveImage(context: Context): Uri? {
+    return try {
+        val filename = "screenshot-${System.currentTimeMillis()}.png"
+        val imageFile = File(context.cacheDir, filename)
+
+        FileOutputStream(imageFile).use { outputStream ->
+            this.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+        }
+
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+private fun shareBitmap(context: Context, uri: Uri?) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    startActivity(context, createChooser(intent, "Share your image"), null)
 }
 
 @Preview(
