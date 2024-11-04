@@ -209,6 +209,7 @@ fun HomeScreen(
                         note
                     )
                     viewModel.saveRecord(record)
+                    focusManager.clearFocus()
                     Toast.makeText(
                         context,
                         "Record saved successfully",
