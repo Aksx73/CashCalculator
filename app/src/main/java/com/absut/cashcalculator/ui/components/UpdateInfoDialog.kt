@@ -37,10 +37,7 @@ fun UpdateInfoDialog(releaseInfo: GitHubRelease, onDismissRequest: () -> Unit) {
             Icon(
                 Icons.Default.Info,
                 contentDescription = "Update Info",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .height(37.dp)
-                    .width(27.dp),
+                tint = MaterialTheme.colorScheme.secondary,
             )
         },
         title = {
@@ -62,13 +59,6 @@ fun UpdateInfoDialog(releaseInfo: GitHubRelease, onDismissRequest: () -> Unit) {
             )
         },
         confirmButton = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(35.dp),
-                horizontalArrangement = Arrangement.Absolute.Right,
-            ) {
-                TextButton(onClick = onDismissRequest) { Text("Later") }
                 TextButton(
                     onClick = {
                         val browserIntent = Intent(Intent.ACTION_VIEW, releaseInfo.htmlUrl.toUri())
@@ -78,8 +68,9 @@ fun UpdateInfoDialog(releaseInfo: GitHubRelease, onDismissRequest: () -> Unit) {
                 ) {
                     Text("Go to GitHub")
                 }
-            }
         },
-        dismissButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) { Text("Later") }
+        },
     )
 }
