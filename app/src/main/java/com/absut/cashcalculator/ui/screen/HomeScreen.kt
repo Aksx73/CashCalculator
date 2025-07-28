@@ -94,7 +94,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel,
     onViewSavedRecordClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onCheckUpdateClick: () -> Unit
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -117,7 +118,8 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(modifier = modifier.fillMaxSize(),
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
@@ -175,6 +177,19 @@ fun HomeScreen(
                             leadingIcon = {
                                 Icon(
                                     painterResource(id = R.drawable.ic_database_24dp),
+                                    contentDescription = "View history"
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                showMenu = false
+                                onCheckUpdateClick()
+                            },
+                            text = { Text(text = "Check for updates") },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(id = R.drawable.ic_sync_24),
                                     contentDescription = "View history"
                                 )
                             }
@@ -249,22 +264,23 @@ fun HomeScreen(
                     )
                     Text(text = "Share as Text")
                 }
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable {
-                        focusManager.clearFocus()
-                        shareBitmapFromComposable()
-                        coroutineScope
-                            .launch {
-                                sheetState.hide()
-                            }
-                            .invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    showShareOptionBottomSheet = false
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable {
+                            focusManager.clearFocus()
+                            shareBitmapFromComposable()
+                            coroutineScope
+                                .launch {
+                                    sheetState.hide()
                                 }
-                            }
-                    }) {
+                                .invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        showShareOptionBottomSheet = false
+                                    }
+                                }
+                        }) {
                     Icon(
                         modifier = Modifier.padding(end = 16.dp),
                         painter = painterResource(R.drawable.ic_image_24),
@@ -291,8 +307,7 @@ fun HomeScreen(
                     },
                 viewModel
             )
-        }
-        else {
+        } else {
             DefaultLayout(
                 Modifier
                     .padding(innerPadding)
@@ -571,7 +586,8 @@ fun GreetingPreview() {
         HomeScreen(
             viewModel = viewModel<MainViewModel>(),
             onViewSavedRecordClick = {},
-            onShareClick = {}
+            onShareClick = {},
+            onCheckUpdateClick = {}
         )
     }
 }

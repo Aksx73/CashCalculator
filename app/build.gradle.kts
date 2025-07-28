@@ -6,16 +6,37 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+fun execCommand(command: String): String? {
+    val cmd = command.split(" ").toTypedArray()
+    val process = ProcessBuilder(*cmd)
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .start()
+    return process.inputStream.bufferedReader().readLine()?.trim()
+}
+
+val commitCount by project.extra {
+    execCommand("git rev-list --count HEAD")?.toInt()
+        ?: throw GradleException("Unable to get number of commits. Make sure git is initialized.")
+}
+
+val commitHash by project.extra {
+    execCommand("git rev-parse --short HEAD")
+        ?: throw GradleException(
+            "Unable to get commit hash. Make sure git is initialized."
+        )
+}
+
 android {
     namespace = "com.absut.cashcalculator"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.absut.cashcalculator"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 3
+        targetSdk = 36
+        versionCode = commitCount
         versionName = "1.2"
+        resValue("string", "app_version", "\"${versionName}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -26,6 +47,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +63,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -69,6 +92,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

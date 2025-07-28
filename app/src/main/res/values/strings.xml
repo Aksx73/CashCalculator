@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CashCalculator</string>
+    <string name="update_available_text">A new update to %1$s is available!\nYou\'re on v%2$s.</string>
+    <string name="update_url">https://api.github.com/repos/Aksx73/CashCalculator/releases/latest</string>
+    <string name="github_latest_rel">https://github.com/Aksx73/CashCalculator/releases/latest</string>
+
 </resources>
