@@ -22,6 +22,9 @@ object Utils {
             50 -> R.drawable.fifty_note
             20 -> R.drawable.twenty_note
             10 -> R.drawable.ten_note
+            5 -> R.drawable.five_note
+            2 -> R.drawable.two_coin
+            1 -> R.drawable.one_coin
             else -> R.drawable.ten_note
         }
     }
