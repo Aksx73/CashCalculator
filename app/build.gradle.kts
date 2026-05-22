@@ -37,7 +37,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = commitCount
-        versionName = "1.2"
+        versionName = "1.3"
         resValue("string", "app_version", "\"${versionName}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

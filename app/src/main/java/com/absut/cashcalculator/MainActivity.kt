@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +26,7 @@ import com.absut.cashcalculator.ui.screen.SavedRecordScreen
 import com.absut.cashcalculator.ui.theme.CashCalculatorTheme
 import com.absut.cashcalculator.util.MainViewModelFactory
 import com.absut.cashcalculator.util.toIndianCurrencyString
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,11 +41,12 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel =
                     viewModel(factory = MainViewModelFactory(applicationContext))
                 val context = LocalContext.current
+                val coroutineScope = rememberCoroutineScope()
                 var updateInfo by remember { mutableStateOf<GitHubRelease?>(null) }
                 var shouldCheckForUpdate by remember { mutableStateOf(true) } //to check update on app start
 
                 LaunchedEffect(shouldCheckForUpdate) {
-                    if (shouldCheckForUpdate){
+                    if (shouldCheckForUpdate) {
                         val update = UpdateChecker.checkForUpdate(context)
                         update?.let { updateInfo = it }
                         shouldCheckForUpdate = false
@@ -56,7 +59,17 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onViewSavedRecordClick = { navController.navigate("saved_record") },
                             onShareClick = { shareIntent(this@MainActivity, viewModel) },
-                            onCheckUpdateClick = { shouldCheckForUpdate = true })
+                            onCheckUpdateClick = {
+                                coroutineScope.launch {
+                                    val update = UpdateChecker.checkForUpdate(context)
+                                    if (update != null) {
+                                        updateInfo = update
+                                    } else {
+                                        it("App is already up to date")
+                                    }
+                                }
+                            }
+                        )
                     }
                     composable("saved_record") {
                         SavedRecordScreen(

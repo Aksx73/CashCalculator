@@ -95,7 +95,7 @@ fun HomeScreen(
     viewModel: MainViewModel,
     onViewSavedRecordClick: () -> Unit,
     onShareClick: () -> Unit,
-    onCheckUpdateClick: () -> Unit
+    onCheckUpdateClick: ((String) -> Unit) -> Unit
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -184,7 +184,11 @@ fun HomeScreen(
                         DropdownMenuItem(
                             onClick = {
                                 showMenu = false
-                                onCheckUpdateClick()
+                                onCheckUpdateClick { message ->
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(message)
+                                    }
+                                }
                             },
                             text = { Text(text = "Check for updates") },
                             leadingIcon = {
